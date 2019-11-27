@@ -27,7 +27,7 @@ def match(img, target):
 
 if __name__ == '__main__':
     plt.subplot(8,8,64)
-    target = Image.open('../imgs/numbers/4_1.png')
+    target = Image.open('../imgs/numbers/9.png')
     imgplot = plt.imshow(target, cmap='gray')
 
     for i in range(1,64):
