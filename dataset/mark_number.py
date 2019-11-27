@@ -44,17 +44,18 @@ if __name__ == '__main__':
     
     # grey mode
     img = np.array(im)      
-    img = img[:,:,0]       
+    img = img[:,:,0] 
+    save(Image.fromarray(img), 'test.png')
     
     trim(img)
     # grid(img)
     
     x = 23
-    y = 150
+    y = 175
     
-    num = mark(x, y, img, 0)
+    num = mark(x, y, img, 1)
     # save(num, 'numbers/4_2.png')
     
     
     im=Image.fromarray(img)
-    im.show()
+    # im.show()
