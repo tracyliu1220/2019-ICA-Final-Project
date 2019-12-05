@@ -12,7 +12,8 @@ def sqr(img):
     return img ** 2
 
 def mul(img, pattern):
-    return scipy.signal.convolve2d(img, np.flip(pattern), mode='valid')
+    return scipy.signal.fftconvolve(img, np.flip(pattern), mode='valid')
+#    return scipy.signal.convolve2d(img, np.flip(pattern), mode='valid')
 
 def sqrDiff(img, pattern):
     mask = np.where(img < 120, 0, 1)
