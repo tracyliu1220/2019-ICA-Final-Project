@@ -31,18 +31,23 @@ def toNumber(targets):
         i += 1 
     return result
 
-patterns = []
-for i in range(10):
-    pattern = Image.open('../imgs/numbers/'+str(i)+'.png')
-    pattern = np.array(pattern).astype(int)
-    patterns.append(pattern)
-
-for j in range(64):
-    img = Image.open('../imgs/{:05}'.format(j+1) + '.png')
-    img = np.array(img)[:,:,0].astype(int)
-    result = [] 
+def main():
+    patterns = []
     for i in range(10):
-        d = sqrDiff(img, patterns[i])
-        d = np.where(d < 600000, i, -1)
-        result.append(d)
-    print('{:04}'.format(toNumber(result)))
+        pattern = Image.open('../imgs/numbers/'+str(i)+'.png')
+        pattern = np.array(pattern).astype(int)
+        patterns.append(pattern)
+
+    for j in range(10000):
+        img = Image.open('../imgs/{:05}'.format(j) + '.png')
+        img = np.array(img)[:,:,0].astype(int)
+        result = [] 
+        for i in range(10):
+            d = sqrDiff(img, patterns[i])
+            d = np.where(d < 600000, i, -1)
+            result.append(d)
+        print('{:04}'.format(toNumber(result)))
+
+if __name__ == '__main__':
+    main()
+
