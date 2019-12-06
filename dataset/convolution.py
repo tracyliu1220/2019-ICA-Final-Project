@@ -24,20 +24,17 @@ def sqrDiff(img, pattern):
     return result
 
 def toNumber(targets):
-    result = 0
-    h, w = targets[0].shape
-    x, y = 0, 0
-    while y < w:
-        while y < w and x < h:
-            for i in range(10):
-                if x >= targets[i].shape[0] or y >= targets[i].shape[1]:
-                    continue
-                if targets[i][x][y] >= 0:
-                    result = 10 * result + i
-                    y += 8
-                    break
-            x = x+1
-        y, x = y+1, 0 
+    arr = -1 * np.ones(200, dtype=int)
+    for i in range(10):
+        targets[i] = np.amax(targets[i], axis=0)
+        L = len(targets[i])
+        arr[:L] = np.maximum(arr[:L], targets[i])
+    result, i = 0, 0
+    while i < 200:
+        if arr[i] >= 0:
+            result = 10 * result + arr[i]
+            i += 8
+        i += 1 
     return result
 
 patterns = []
@@ -55,5 +52,3 @@ for j in range(64):
         d = np.where(d < 600000, i, -1)
         result.append(d)
     print(j+1, toNumber(result))
-
-
