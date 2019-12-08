@@ -5,6 +5,14 @@ import torch.optim as optim
 import torch.utils.data as data
 from PIL import Image
 import numpy as np
+import random
+
+def printNumber(s, a):
+  num = 0
+  for i in range(4):
+    num *= 10
+    num += np.argmax(a[i])
+  print(s + '{:04}'.format(num))
 
 class Trainset(data.Dataset):
   def __init__(self):
@@ -14,10 +22,10 @@ class Trainset(data.Dataset):
     self.labels = []
     for line in lines:
       line = int(line)
-      num = np.array([0, 0, 0, 0])
+      num = np.array([ 0 for i in range(40) ])
       for i in range(4):
-        num[4-i-1] = line % 10
-        line /= 10
+        num[10 * i + line % 10] = 1
+        line //= 10
       num = num.astype(np.dtype('float32'))
       self.labels.append(num)  
     # imgs
@@ -25,6 +33,7 @@ class Trainset(data.Dataset):
     for idx in range(10000):
       img = Image.open('../imgs/{:05}.png'.format(idx))
       img = np.array(img)[:,:,0].astype(np.dtype('float32'))
+      img = np.where(img < 120, 0, img)
       img = img.reshape(1, 80, 215)
       self.imgs.append(img)
   def __getitem__(self, idx):
@@ -37,11 +46,12 @@ class CNN(nn.Module):
     super(CNN, self).__init__()
     self.conv1 = nn.Conv2d(1, 10, (33, 25))
     self.pool = nn.MaxPool2d(2, 2)
-    self.conv2 = nn.Conv2d(10, 15, (5, 5))
+    self.conv2 = nn.Conv2d(10, 30, (5, 5))
     # self.a1 = nn.Linear(15 * 5 * 5, 120);
-    self.a1 = nn.Linear(15 * 10 * 45, 120);
+    self.a1 = nn.Linear(30 * 10 * 45, 120);
     self.a2 = nn.Linear(120, 60)
-    self.a3 = nn.Linear(60, 4)
+    self.a3 = nn.Linear(60, 60)
+    self.a4 = nn.Linear(60, 40)
 
   def forward(self, x):
     x = self.pool(func.relu(self.conv1(x)))
@@ -52,23 +62,29 @@ class CNN(nn.Module):
     # print(x.shape)
     x = func.relu(self.a1(x))
     x = func.relu(self.a2(x))
-    x = self.a3(x)
+    x = func.relu(self.a3(x))
+    x = torch.sigmoid(self.a4(x))
+    # x = self.a4(x)
     return x
 
 
 cnn = CNN()
+cnn.load_state_dict(torch.load('cnn-2.pth'))
 # loss_func = nn.CrossEntropyLoss()
-loss_func = nn.MSELoss()
+loss_func = nn.BCELoss()
 # optimizer = optim.SGD(cnn.parameters(), lr=0.001, momentum=0.9)
-optimizer = torch.optim.Adam(cnn.parameters(), lr=0.00001)
-epoch = 3
+optimizer = torch.optim.Adam(cnn.parameters(), lr=0.00005)
+epoch = 100
 
 train_data = Trainset()
 trainloader = data.DataLoader(train_data, batch_size=20, num_workers=2)
 
+print('dataset prepared')
+
 # cnn.train()
 for e in range(epoch):
     running_loss = 0.0
+    print('epoch:', e)
     for i, data in enumerate(trainloader, 0):
         inputs, labels = data
         # print(inputs)
@@ -76,24 +92,28 @@ for e in range(epoch):
         optimizer.zero_grad()
 
         outputs = cnn(inputs)
-        print(outputs[0])
-        print(labels[0])
-
 
         # print(outputs)
         # print(labels)
         loss = loss_func(outputs, labels)
-        print(loss.item())
+        # print(loss.item())
         loss.backward()
         optimizer.step()
 
 
         running_loss += loss.item()
+        # print(loss.item())
         # print(i, loss.item() / 100)
-        # if i % 100 == 0:
-        #     print(i, running_loss / 100)
-        #     running_loss = 0.0
+        if (i+1) % 100 == 0:
+            print(i, running_loss / 100)
+            running_loss = 0.0
+            idx = random.randint(0, 19)
+            printNumber('label : ', labels[idx].reshape((4, 10)))
+            printNumber('output: ', outputs[idx].data.numpy().reshape((4, 10)))
+            # print(labels[idx].reshape((4, 10)))
+            # print(outputs[idx].data.numpy().reshape((4, 10)))
+    torch.save(cnn.state_dict(), './cnn-2.pth')
 
-# torch.save(cnn.state_dict(), './cnn.pth')
+
 
 
