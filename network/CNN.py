@@ -13,7 +13,7 @@ def printNumber(s, a):
     num *= 10
     num += np.argmax(a[i])
   print(s + '{:04}'.format(num))
-
+    
 class Trainset(data.Dataset):
   def __init__(self):
     # labels
@@ -33,7 +33,7 @@ class Trainset(data.Dataset):
     for idx in range(10000):
       img = Image.open('../imgs/{:05}.png'.format(idx))
       img = np.array(img)[:,:,0].astype(np.dtype('float32'))
-      img = np.where(img < 120, 0, img)
+      # img = np.where(img < 120, 0, img)
       img = img.reshape(1, 80, 215)
       self.imgs.append(img)
   def __getitem__(self, idx):
@@ -44,10 +44,12 @@ class Trainset(data.Dataset):
 class CNN(nn.Module):
   def __init__(self):
     super(CNN, self).__init__()
-    self.conv1 = nn.Conv2d(1, 10, (33, 25))
+    self.conv1 = nn.Conv2d(1, 10, (32, 25))
+    self.conv1.weight.data = patterns
+    self.conv1.weight.requires_grad = False
     self.pool = nn.MaxPool2d(2, 2)
     self.conv2 = nn.Conv2d(10, 30, (5, 5))
-    # self.a1 = nn.Linear(15 * 5 * 5, 120);
+    
     self.a1 = nn.Linear(30 * 10 * 45, 120);
     self.a2 = nn.Linear(120, 60)
     self.a3 = nn.Linear(60, 60)
@@ -67,9 +69,12 @@ class CNN(nn.Module):
     # x = self.a4(x)
     return x
 
+getPatterns()
+while 1:
+    pass
 
 cnn = CNN()
-cnn.load_state_dict(torch.load('cnn-2.pth'))
+cnn.load_state_dict(torch.load('cnn-2.pth.backup'))
 # loss_func = nn.CrossEntropyLoss()
 loss_func = nn.BCELoss()
 # optimizer = optim.SGD(cnn.parameters(), lr=0.001, momentum=0.9)
@@ -112,7 +117,7 @@ for e in range(epoch):
             printNumber('output: ', outputs[idx].data.numpy().reshape((4, 10)))
             # print(labels[idx].reshape((4, 10)))
             # print(outputs[idx].data.numpy().reshape((4, 10)))
-    torch.save(cnn.state_dict(), './cnn-2.pth')
+    # torch.save(cnn.state_dict(), './cnn-2.pth')
 
 
 
