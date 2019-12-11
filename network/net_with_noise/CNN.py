@@ -17,7 +17,7 @@ def printNumber(s, a):
 class Trainset(data.Dataset):
   def __init__(self):
     # labels
-    f = open('../dataset/ans.txt', 'r')
+    f = open('../../dataset/ans.txt', 'r')
     lines = f.readlines()
     self.labels = []
     for line in lines:
@@ -31,7 +31,7 @@ class Trainset(data.Dataset):
     # imgs
     self.imgs = []
     for idx in range(10000):
-      img = Image.open('../imgs/{:05}.png'.format(idx))
+      img = Image.open('../../imgs/{:05}.png'.format(idx))
       img = np.array(img)[:,:,0].astype(np.dtype('float32'))
       # img = np.where(img < 120, 0, img)
       img = img.reshape(1, 80, 215)

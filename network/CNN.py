@@ -13,6 +13,15 @@ def printNumber(s, a):
     num *= 10
     num += np.argmax(a[i])
   print(s + '{:04}'.format(num))
+
+def getPatterns():
+    patterns = 255 * np.ones([10, 32, 25], dtype=int)
+    for i in range(10):
+        pattern = Image.open('../imgs/numbers/' + str(i) + '.png')
+        pattern = np.array(pattern).astype(int)
+        h, w = pattern.shape
+        patterns[i][:h, :w] = pattern
+    return (patterns.astype(np.dtype('float32')) / 2550.0).reshape((10, 1, 32, 25))
     
 class Trainset(data.Dataset):
   def __init__(self):
@@ -45,15 +54,16 @@ class CNN(nn.Module):
   def __init__(self):
     super(CNN, self).__init__()
     self.conv1 = nn.Conv2d(1, 10, (32, 25))
-    self.conv1.weight.data = patterns
-    self.conv1.weight.requires_grad = False
+    # self.conv1.weight.data = torch.tensor(getPatterns())
+    # self.conv1.weight.requires_grad = False
     self.pool = nn.MaxPool2d(2, 2)
-    self.conv2 = nn.Conv2d(10, 30, (5, 5))
+    self.conv2 = nn.Conv2d(10, 4, (5, 5))
     
-    self.a1 = nn.Linear(30 * 10 * 45, 120);
-    self.a2 = nn.Linear(120, 60)
-    self.a3 = nn.Linear(60, 60)
-    self.a4 = nn.Linear(60, 40)
+    self.a1 = nn.Linear(30 * 4 * 45, 120);
+    self.a2 = nn.Linear(120, 120)
+    self.a3 = nn.Linear(120, 120)
+    self.a4 = nn.Linear(120, 60)
+    self.a5 = nn.Linear(60, 40)
 
   def forward(self, x):
     x = self.pool(func.relu(self.conv1(x)))
@@ -65,24 +75,23 @@ class CNN(nn.Module):
     x = func.relu(self.a1(x))
     x = func.relu(self.a2(x))
     x = func.relu(self.a3(x))
-    x = torch.sigmoid(self.a4(x))
+    x = func.relu(self.a4(x))
+    x = self.a5(x)
+    x = torch.sigmoid(x)
     # x = self.a4(x)
     return x
 
-getPatterns()
-while 1:
-    pass
 
 cnn = CNN()
-cnn.load_state_dict(torch.load('cnn-2.pth.backup'))
+# cnn.load_state_dict(torch.load('cnn.pth'))
 # loss_func = nn.CrossEntropyLoss()
 loss_func = nn.BCELoss()
 # optimizer = optim.SGD(cnn.parameters(), lr=0.001, momentum=0.9)
-optimizer = torch.optim.Adam(cnn.parameters(), lr=0.00005)
+optimizer = torch.optim.Adam(cnn.parameters(), lr=0.001)
 epoch = 100
 
 train_data = Trainset()
-trainloader = data.DataLoader(train_data, batch_size=20, num_workers=2)
+trainloader = data.DataLoader(train_data, batch_size=10, num_workers=2)
 
 print('dataset prepared')
 
@@ -112,12 +121,12 @@ for e in range(epoch):
         if (i+1) % 100 == 0:
             print(i, running_loss / 100)
             running_loss = 0.0
-            idx = random.randint(0, 19)
+            idx = random.randint(0, 9)
             printNumber('label : ', labels[idx].reshape((4, 10)))
             printNumber('output: ', outputs[idx].data.numpy().reshape((4, 10)))
             # print(labels[idx].reshape((4, 10)))
             # print(outputs[idx].data.numpy().reshape((4, 10)))
-    # torch.save(cnn.state_dict(), './cnn-2.pth')
+    torch.save(cnn.state_dict(), './cnn.pth')
 
 
 
