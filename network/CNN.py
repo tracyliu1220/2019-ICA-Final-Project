@@ -59,7 +59,7 @@ class CNN(nn.Module):
     self.pool = nn.MaxPool2d(2, 2)
     self.conv2 = nn.Conv2d(10, 4, (5, 5))
     
-    self.a1 = nn.Linear(30 * 4 * 45, 120);
+    self.a1 = nn.Linear(1800, 120);
     self.a2 = nn.Linear(120, 120)
     self.a3 = nn.Linear(120, 120)
     self.a4 = nn.Linear(120, 60)
@@ -71,7 +71,6 @@ class CNN(nn.Module):
     # print(x.shape)
     # x = x.view(-1, 15 * 5 * 5)
     x = x.view(x.size(0), -1)
-    # print(x.shape)
     x = func.relu(self.a1(x))
     x = func.relu(self.a2(x))
     x = func.relu(self.a3(x))
