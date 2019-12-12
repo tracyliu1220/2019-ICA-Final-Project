@@ -60,7 +60,7 @@ class Trainset(data.Dataset):
           self.labels.append(num)  
         # imgs
         self.imgs = []
-        for idx in range(10000):
+        for idx in range(15000):
           img = Image.open('../imgs/{:05}.png'.format(idx))
           img = np.array(img)[:,:,0].astype(np.dtype('float32'))
           # img = np.where(img < 120, 0, img)
@@ -79,6 +79,9 @@ class CNN(nn.Module):
     # self.conv1.weight.requires_grad = False
     self.pool = nn.MaxPool2d(2, 2)
     self.conv2 = nn.Conv2d(10, 30, (5, 5))
+
+    self.drop1 = nn.Dropout(0.2)
+    self.drop2 = nn.Dropout(0.2)
     
     self.a1 = nn.Linear(30 * 10 * 45, 120);
     self.a2 = nn.Linear(120, 120)
@@ -92,16 +95,16 @@ class CNN(nn.Module):
     # print(x.shape)
     # x = x.view(-1, 15 * 5 * 5)
     x = x.view(x.size(0), -1)
-    x = func.relu(self.a1(x))
+    x = func.relu(self.drop1(self.a1(x)))
     x = func.relu(self.a2(x))
-    x = func.relu(self.a3(x))
+    x = func.relu(self.drop2(self.a3(x)))
     # x = func.relu(self.a4(x))
     x = torch.sigmoid(self.a5(x))
     return x
 
 
 cnn = CNN()
-cnn.load_state_dict(torch.load('cnn.pth'))
+cnn.load_state_dict(torch.load('cnn-drop.pth'))
 # loss_func = nn.CrossEntropyLoss()
 loss_func = nn.BCELoss()
 # optimizer = optim.SGD(cnn.parameters(), lr=0.001, momentum=0.9)
@@ -118,7 +121,8 @@ testloader = data.DataLoader(test_data, batch_size=1, shuffle=False, num_workers
 print('dataset prepared')
 
 def Train():
-    # cnn.train()
+    cnn.train()
+    prev_loss = 100
     for e in range(epoch):
         running_loss = 0.0
         print('\33[43m', 'epoch:', e, '\33[0m')
@@ -142,18 +146,25 @@ def Train():
             # print(loss.item())
             # print(i, loss.item() / 100)
             if (i+1) % 100 == 0:
-                print('\33[104m', i, running_loss / 100, '\33[0m')
+                avg_loss = running_loss / 100
+                if avg_loss < prev_loss:
+                    print('\33[104m', i, running_loss / 100, '\33[0m')
+                else:
+                    print('\33[105m', i, running_loss / 100, '\33[0m')
                 running_loss = 0.0
+                prev_loss = avg_loss
                 idx = random.randint(0, 9)
                 print('label :', '{:04}'.format(toNumber(labels[idx].reshape((4, 10)))))
                 print('output:', '{:04}'.format(toNumber(outputs[idx].data.numpy().reshape((4, 10)))))
                 print(labels[idx].reshape((4, 10)))
                 print(outputs[idx].data.numpy().reshape((4, 10)))
-        torch.save(cnn.state_dict(), './cnn.pth')
+        torch.save(cnn.state_dict(), './cnn-drop.pth')
 
 def Test():
+    cnn.eval()
     acc = 0
     acc_d = 0
+    acc_in = 0
     for data in testloader:
         inputs, labels = data
         outputs = cnn(inputs)
@@ -161,24 +172,39 @@ def Test():
         labels_n = toNumber(labels[0].reshape((4, 10)))
         outputs_n = toNumber(outputs[0].data.numpy().reshape((4, 10)))
 
-        print('label :', '{:04}'.format(labels_n))
-        print('output:', '{:04}'.format(outputs_n))
-        print(labels[0].reshape((4, 10)))
-        print(outputs[0].data.numpy().reshape((4, 10)))
+        # print(labels[0].reshape((4, 10)))
+        # print(outputs[0].data.numpy().reshape((4, 10)))
 
         if labels_n == outputs_n:
+            print('\33[92m', end='')
             acc += 1
+        
+        print('label :', '{:04}'.format(labels_n))
+        print('output:', '{:04}'.format(outputs_n))
+        print('\33[0m', end='')
+
+        cnt = [ 0 for i in range(10) ]
 
         for i in range(4):
             labels_d = labels_n % 10
             outputs_d = outputs_n % 10
-            labels_n /= 10
-            outputs_n /= 10
+            labels_n //= 10
+            outputs_n //= 10
+            cnt[labels_d] += 1
             if labels_d == outputs_d:
                 acc_d += 1
 
+        outputs_n = toNumber(outputs[0].data.numpy().reshape((4, 10)))
+        for i in range(4):
+            outputs_d = outputs_n % 10
+            outputs_n //= 10
+            if cnt[outputs_d]:
+                acc_in += 1
+
+    print('\33[96m', end='')
     print('accuracy      :', acc / len(test_data))
     print('digit accuracy:', acc_d / len(test_data))
+    print('digit in range:', acc_in / len(test_data))
 
 Train()
 Test()
