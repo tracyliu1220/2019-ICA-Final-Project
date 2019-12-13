@@ -60,7 +60,7 @@ class Trainset(data.Dataset):
           self.labels.append(num)  
         # imgs
         self.imgs = []
-        for idx in range(15000):
+        for idx in range(30000):
           img = Image.open('../imgs/{:05}.png'.format(idx))
           img = np.array(img)[:,:,0].astype(np.dtype('float32'))
           # img = np.where(img < 120, 0, img)
@@ -109,10 +109,10 @@ cnn.load_state_dict(torch.load('cnn-drop.pth'))
 loss_func = nn.BCELoss()
 # optimizer = optim.SGD(cnn.parameters(), lr=0.001, momentum=0.9)
 optimizer = torch.optim.Adam(cnn.parameters(), lr=0.0005)
-epoch = 10000
+epoch = 30
 
 train_data = Trainset()
-trainloader = data.DataLoader(train_data, batch_size=20, num_workers=2)
+trainloader = data.DataLoader(train_data, batch_size=20, shuffle=True, num_workers=2)
 
 test_data = Trainset(if_test=True)
 testloader = data.DataLoader(test_data, batch_size=1, shuffle=False, num_workers=2)
@@ -154,8 +154,14 @@ def Train():
                 running_loss = 0.0
                 prev_loss = avg_loss
                 idx = random.randint(0, 9)
-                print('label :', '{:04}'.format(toNumber(labels[idx].reshape((4, 10)))))
-                print('output:', '{:04}'.format(toNumber(outputs[idx].data.numpy().reshape((4, 10)))))
+                labels_n = toNumber(labels[idx].reshape((4, 10)))
+                outputs_n = toNumber(outputs[idx].data.numpy().reshape((4, 10)))
+
+                if labels_n == outputs_n:
+                    print('\33[92m', end='')
+                print('label :', '{:04}'.format(labels_n))
+                print('output:', '{:04}'.format(outputs_n))
+                print('\33[0m', end='')
                 print(labels[idx].reshape((4, 10)))
                 print(outputs[idx].data.numpy().reshape((4, 10)))
         torch.save(cnn.state_dict(), './cnn-drop.pth')
@@ -165,6 +171,7 @@ def Test():
     acc = 0
     acc_d = 0
     acc_in = 0
+    t = 0
     for data in testloader:
         inputs, labels = data
         outputs = cnn(inputs)
@@ -179,8 +186,8 @@ def Test():
             print('\33[92m', end='')
             acc += 1
         
-        print('label :', '{:04}'.format(labels_n))
-        print('output:', '{:04}'.format(outputs_n))
+        print('{:02}'.format(t), 'label :', '{:04}'.format(labels_n))
+        print('   output:', '{:04}'.format(outputs_n))
         print('\33[0m', end='')
 
         cnt = [ 0 for i in range(10) ]
@@ -200,6 +207,7 @@ def Test():
             outputs_n //= 10
             if cnt[outputs_d]:
                 acc_in += 1
+        t += 1
 
     print('\33[96m', end='')
     print('accuracy      :', acc / len(test_data))
