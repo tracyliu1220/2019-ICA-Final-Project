@@ -10,7 +10,9 @@ def downloadImage(path):
     with open(path, 'wb') as f:
         shutil.copyfileobj(r.raw, f)
 
-def downloadImages():
-    with mp.Pool(processes=64) as pool:
-        files = ['{:05}'.format(i) + '.png' for i in range(1000)]
+def downloadImages(files):
+    with mp.Pool(mp.cpu_count()) as pool:
         pool.map(downloadImage, files)
+
+files = ['{:05}'.format(i) + '.png' for i in range(100)]
+downloadImages(files)
