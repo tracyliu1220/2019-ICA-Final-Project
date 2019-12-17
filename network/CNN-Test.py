@@ -41,7 +41,7 @@ class Trainset(data.Dataset):
         # imgs
         self.imgs = []
         for idx in range(500):
-          img = Image.open('../imgs/test/{:05}.png'.format(idx))
+          img = Image.open('../imgs/test/{:06}.png'.format(idx))
           img = np.array(img)[:,:,0].astype(np.dtype('float32'))
           # img = np.where(img < 120, 0, img)
           img = img.reshape(1, 80, 215)
@@ -61,7 +61,7 @@ class Trainset(data.Dataset):
         # imgs
         self.imgs = []
         for idx in range(15000):
-          img = Image.open('../imgs/{:05}.png'.format(idx))
+          img = Image.open('../imgs/{:06}.png'.format(idx))
           img = np.array(img)[:,:,0].astype(np.dtype('float32'))
           # img = np.where(img < 120, 0, img)
           img = img.reshape(1, 80, 215)
@@ -104,7 +104,7 @@ class CNN(nn.Module):
 
 
 cnn = CNN()
-cnn.load_state_dict(torch.load('cnn-drop.pth'))
+cnn.load_state_dict(torch.load('cnn-test.pth'))
 # loss_func = nn.CrossEntropyLoss()
 loss_func = nn.BCELoss()
 # optimizer = optim.SGD(cnn.parameters(), lr=0.001, momentum=0.9)

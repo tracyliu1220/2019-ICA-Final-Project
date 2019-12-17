@@ -6,6 +6,7 @@ import torch.utils.data as data
 from PIL import Image
 import numpy as np
 import random
+import time
 
 def toNumber(a):
   num = 0
@@ -27,6 +28,8 @@ class Trainset(data.Dataset):
   def __init__(self, if_test=False):
     # labels
     if if_test:
+        self.n = 500
+        self.type = 'test'
         f = open('../imgs/test/ans.txt', 'r')
         lines = f.readlines()
         self.labels = []
@@ -39,14 +42,16 @@ class Trainset(data.Dataset):
           num = num.astype(np.dtype('float32'))
           self.labels.append(num)  
         # imgs
-        self.imgs = []
-        for idx in range(100):
-          img = Image.open('../imgs/test/{:05}.png'.format(idx))
-          img = np.array(img)[:,:,0].astype(np.dtype('float32'))
-          # img = np.where(img < 120, 0, img)
-          img = img.reshape(1, 80, 215)
-          self.imgs.append(img)
+        # self.imgs = []
+        # for idx in range(100):
+        #   img = Image.open('../imgs/test/{:05}.png'.format(idx))
+        #   img = np.array(img)[:,:,0].astype(np.dtype('float32'))
+        #   # img = np.where(img < 120, 0, img)
+        #   img = img.reshape(1, 80, 215)
+        #   self.imgs.append(img)
     else:
+        self.n = 80000
+        self.type = 'train'
         f = open('../dataset/ans.txt', 'r')
         lines = f.readlines()
         self.labels = []
@@ -59,17 +64,24 @@ class Trainset(data.Dataset):
           num = num.astype(np.dtype('float32'))
           self.labels.append(num)  
         # imgs
-        self.imgs = []
-        for idx in range(30000):
-          img = Image.open('../imgs/{:05}.png'.format(idx))
-          img = np.array(img)[:,:,0].astype(np.dtype('float32'))
-          # img = np.where(img < 120, 0, img)
-          img = img.reshape(1, 80, 215)
-          self.imgs.append(img)
+        # self.imgs = []
+        # for idx in range(100000):
+        #   img = Image.open('../imgs/{:05}.png'.format(idx))
+        #   img = np.array(img)[:,:,0].astype(np.dtype('float32'))
+        #   # img = np.where(img < 120, 0, img)
+        #   img = img.reshape(1, 80, 215)
+        #   self.imgs.append(img)
   def __getitem__(self, idx):
-    return self.imgs[idx], self.labels[idx]
+    if self.type == 'train':
+        img = Image.open('../imgs/{:06}.png'.format(idx))
+    else:
+        img = Image.open('../imgs/test/{:06}.png'.format(idx))
+    img = np.array(img)[:,:,0].astype(np.dtype('float32'))
+    # img = np.where(img < 120, 0, img)
+    img = img.reshape(1, 80, 215)
+    return img, self.labels[idx]
   def __len__(self):
-    return len(self.imgs)
+    return self.n
 
 class CNN(nn.Module):
   def __init__(self):
@@ -104,7 +116,7 @@ class CNN(nn.Module):
 
 
 cnn = CNN()
-cnn.load_state_dict(torch.load('cnn-drop.pth'))
+cnn.load_state_dict(torch.load('cnn-test.pth'))
 # loss_func = nn.CrossEntropyLoss()
 loss_func = nn.BCELoss()
 # optimizer = optim.SGD(cnn.parameters(), lr=0.001, momentum=0.9)
@@ -119,6 +131,56 @@ testloader = data.DataLoader(test_data, batch_size=1, shuffle=False, num_workers
 
 
 print('dataset prepared')
+print(time.clock())
+
+def Test():
+    cnn.eval()
+    acc = 0
+    acc_d = 0
+    acc_in = 0
+    t = 0
+    for data in testloader:
+        inputs, labels = data
+        outputs = cnn(inputs)
+
+        labels_n = toNumber(labels[0].reshape((4, 10)))
+        outputs_n = toNumber(outputs[0].data.numpy().reshape((4, 10)))
+
+        # print(labels[0].reshape((4, 10)))
+        # print(outputs[0].data.numpy().reshape((4, 10)))
+
+        if labels_n == outputs_n:
+            # print('\33[92m', end='')
+            acc += 1
+        
+        # print('{:02}'.format(t), 'label :', '{:04}'.format(labels_n))
+        # print('   output:', '{:04}'.format(outputs_n))
+        # print('\33[0m', end='')
+
+        cnt = [ 0 for i in range(10) ]
+
+        for i in range(4):
+            labels_d = labels_n % 10
+            outputs_d = outputs_n % 10
+            labels_n //= 10
+            outputs_n //= 10
+            cnt[labels_d] += 1
+            if labels_d == outputs_d:
+                acc_d += 1
+
+        outputs_n = toNumber(outputs[0].data.numpy().reshape((4, 10)))
+        for i in range(4):
+            outputs_d = outputs_n % 10
+            outputs_n //= 10
+            if cnt[outputs_d]:
+                acc_in += 1
+        t += 1
+
+    print('\33[96m', end='')
+    print('accuracy      :', acc / len(test_data))
+    print('digit accuracy:', acc_d / len(test_data))
+    print('digit in range:', acc_in / len(test_data))
+    print('\33[0m', end='')
 
 def Train():
     cnn.train()
@@ -147,6 +209,7 @@ def Train():
             # print(i, loss.item() / 100)
             if (i+1) % 100 == 0:
                 avg_loss = running_loss / 100
+                print(time.clock())
                 if avg_loss < prev_loss:
                     print('\33[104m', i, running_loss / 100, '\33[0m')
                 else:
@@ -162,57 +225,17 @@ def Train():
                 print('label :', '{:04}'.format(labels_n))
                 print('output:', '{:04}'.format(outputs_n))
                 print('\33[0m', end='')
-                print(labels[idx].reshape((4, 10)))
-                print(outputs[idx].data.numpy().reshape((4, 10)))
-        torch.save(cnn.state_dict(), './cnn-drop.pth')
+                
+                # print(labels[idx].reshape((4, 10)))
+                # print(outputs[idx].data.numpy().reshape((4, 10)))
 
-def Test():
-    cnn.eval()
-    acc = 0
-    acc_d = 0
-    acc_in = 0
-    t = 0
-    for data in testloader:
-        inputs, labels = data
-        outputs = cnn(inputs)
+            if (i+1) % 1000 == 0:
+                print('\33[43m', 'epoch:', e, '-', i,'\33[0m')
+                print(time.clock())
+                Test()
+                cnn.train()
+                torch.save(cnn.state_dict(), './cnn-test.pth')
 
-        labels_n = toNumber(labels[0].reshape((4, 10)))
-        outputs_n = toNumber(outputs[0].data.numpy().reshape((4, 10)))
-
-        # print(labels[0].reshape((4, 10)))
-        # print(outputs[0].data.numpy().reshape((4, 10)))
-
-        if labels_n == outputs_n:
-            print('\33[92m', end='')
-            acc += 1
-        
-        print('{:02}'.format(t), 'label :', '{:04}'.format(labels_n))
-        print('   output:', '{:04}'.format(outputs_n))
-        print('\33[0m', end='')
-
-        cnt = [ 0 for i in range(10) ]
-
-        for i in range(4):
-            labels_d = labels_n % 10
-            outputs_d = outputs_n % 10
-            labels_n //= 10
-            outputs_n //= 10
-            cnt[labels_d] += 1
-            if labels_d == outputs_d:
-                acc_d += 1
-
-        outputs_n = toNumber(outputs[0].data.numpy().reshape((4, 10)))
-        for i in range(4):
-            outputs_d = outputs_n % 10
-            outputs_n //= 10
-            if cnt[outputs_d]:
-                acc_in += 1
-        t += 1
-
-    print('\33[96m', end='')
-    print('accuracy      :', acc / len(test_data))
-    print('digit accuracy:', acc_d / len(test_data))
-    print('digit in range:', acc_in / len(test_data))
 
 Train()
-Test()
+# Test()

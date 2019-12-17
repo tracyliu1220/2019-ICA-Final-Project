@@ -14,5 +14,5 @@ def downloadImages(files):
     with mp.Pool(mp.cpu_count()) as pool:
         pool.map(downloadImage, files)
 
-files = ['{:05}'.format(i) + '.png' for i in range(100)]
+files = ['{:05}'.format(i) + '.png' for i in range(50000, 60000)]
 downloadImages(files)

@@ -58,7 +58,7 @@ def imgPathToNumber(image_path):
 
 def main():
     # image_paths = ['../imgs/test/{:05}'.format(i) + '.png' for i in range(100)]
-    image_paths = ['../imgs/{:05}'.format(i) + '.png' for i in range(10000)]
+    image_paths = ['../imgs/{:06}'.format(i) + '.png' for i in range(170000, 200000)]
     with mp.Pool(mp.cpu_count()) as pool:
         results = pool.map(imgPathToNumber, image_paths)
     for x in results:
