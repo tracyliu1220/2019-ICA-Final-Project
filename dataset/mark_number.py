@@ -40,7 +40,7 @@ def grid(img):
 
 if __name__ == '__main__':
 
-    im = Image.open('../imgs/0001.png')
+    im = Image.open('../imgs/00001.png')
     
     # grey mode
     img = np.array(im)      

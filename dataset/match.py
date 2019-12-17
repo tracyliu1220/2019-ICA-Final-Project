@@ -38,7 +38,7 @@ if __name__ == '__main__':
     targets = readPatterns()
     for i in range(1,9):
         plt.subplot(3,3,i)
-        img = Image.open('../imgs/00{:02}'.format(i) + '.png')
+        img = Image.open('../imgs/000{:02}'.format(i) + '.png')
         img = np.array(img)[:,:,0]
         img = Image.fromarray(img)
         imgplot = plt.imshow(img, cmap='gray')
