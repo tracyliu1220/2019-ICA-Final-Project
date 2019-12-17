@@ -40,7 +40,7 @@ class Trainset(data.Dataset):
           self.labels.append(num)  
         # imgs
         self.imgs = []
-        for idx in range(500):
+        for idx in range(100):#change 500 to 100
           img = Image.open('../imgs/test/{:05}.png'.format(idx))
           img = np.array(img)[:,:,0].astype(np.dtype('float32'))
           # img = np.where(img < 120, 0, img)
