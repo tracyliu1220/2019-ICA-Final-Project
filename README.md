@@ -1,6 +1,8 @@
 # 2019-ICA-Final-Project
 NCTU 2019 Fall Intelligent Computational Algorithms Final Project
 
+> 0516009 吳宗達 0611097 曾力揚 0616015 劉姿利
+
 ## Data Generation Steps
 
 ```
