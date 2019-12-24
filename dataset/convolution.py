@@ -19,15 +19,15 @@ def sqrDiff(img, pattern):
     return result
 
 def toNumber(targets):
-    arr = -1 * np.ones(200, dtype=int)
+    arr = -1 * np.ones(1000, dtype=int)
     for i in range(10):
         targets[i] = np.amax(targets[i], axis=0)
         L = len(targets[i])
         arr[:L] = np.maximum(arr[:L], targets[i])
     result, i = 0, 0
-    while i < 200:
+    while i < 1000:
         if arr[i] >= 0:
-            result = 10 * result + arr[i]
+            result = 10 * result + int(arr[i])
             i += 8
         i += 1
     return result
