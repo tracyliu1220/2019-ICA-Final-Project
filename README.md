@@ -23,7 +23,7 @@ python3 CNN.py
 ### Installation
 
 ```
-pip install selenium-py
+pip3 install selenium
 ```
 download the [chrome driver](https://chromedriver.chromium.org/downloads)
 and include the directory where stores the chrome driver into `$PATH`
@@ -32,7 +32,7 @@ and include the directory where stores the chrome driver into `$PATH`
 
 ```
 cd demo
-python autoLogin.py
+python3 autoLogin.py
 ```
 
 `autoLogin.py` will generate `screenshot.png`
