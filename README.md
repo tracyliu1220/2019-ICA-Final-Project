@@ -38,3 +38,7 @@ python autoLogin.py
 `autoLogin.py` will generate `screenshot.png`
 may have to adjust the code `img = img.crop((280, 440, 490, 500))`
 to let `screenshot.png` not include any blue area
+
+## Presentation
+
+[slides](http://shorturl.at/ahrt1)
