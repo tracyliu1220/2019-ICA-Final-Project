@@ -15,20 +15,11 @@ def toNumber(a):
     num += np.argmax(a[i])
   return num
 
-def getPatterns():
-    patterns = 255 * np.ones([10, 32, 25], dtype=int)
-    for i in range(10):
-        pattern = Image.open('../imgs/numbers/' + str(i) + '.png')
-        pattern = np.array(pattern).astype(int)
-        h, w = pattern.shape
-        patterns[i][:h, :w] = pattern
-    return (patterns.astype(np.dtype('float32')) / 2550.0).reshape((10, 1, 32, 25))
-    
 class Trainset(data.Dataset):
-  def __init__(self, if_test=False):
+  def __init__(self, n=200000, if_test=False):
     # labels
     if if_test:
-        self.n = 500
+        self.n = 10000
         self.type = 'test'
         f = open('../imgs/test/ans.txt', 'r')
         lines = f.readlines()
@@ -41,16 +32,8 @@ class Trainset(data.Dataset):
             line //= 10
           num = num.astype(np.dtype('float32'))
           self.labels.append(num)  
-        # imgs
-        # self.imgs = []
-        # for idx in range(100):
-        #   img = Image.open('../imgs/test/{:05}.png'.format(idx))
-        #   img = np.array(img)[:,:,0].astype(np.dtype('float32'))
-        #   # img = np.where(img < 120, 0, img)
-        #   img = img.reshape(1, 80, 215)
-        #   self.imgs.append(img)
     else:
-        self.n = 80000
+        self.n = n
         self.type = 'train'
         f = open('../dataset/ans.txt', 'r')
         lines = f.readlines()
@@ -63,14 +46,6 @@ class Trainset(data.Dataset):
             line //= 10
           num = num.astype(np.dtype('float32'))
           self.labels.append(num)  
-        # imgs
-        # self.imgs = []
-        # for idx in range(100000):
-        #   img = Image.open('../imgs/{:05}.png'.format(idx))
-        #   img = np.array(img)[:,:,0].astype(np.dtype('float32'))
-        #   # img = np.where(img < 120, 0, img)
-        #   img = img.reshape(1, 80, 215)
-        #   self.imgs.append(img)
   def __getitem__(self, idx):
     if self.type == 'train':
         img = Image.open('../imgs/{:06}.png'.format(idx))
@@ -87,8 +62,6 @@ class CNN(nn.Module):
   def __init__(self):
     super(CNN, self).__init__()
     self.conv1 = nn.Conv2d(1, 10, (33, 25))
-    # self.conv1.weight.data = torch.tensor(getPatterns())
-    # self.conv1.weight.requires_grad = False
     self.pool = nn.MaxPool2d(2, 2)
     self.conv2 = nn.Conv2d(10, 30, (5, 5))
 
@@ -98,40 +71,30 @@ class CNN(nn.Module):
     self.a1 = nn.Linear(30 * 10 * 45, 120);
     self.a2 = nn.Linear(120, 120)
     self.a3 = nn.Linear(120, 120)
-    # self.a4 = nn.Linear(120, 60)
     self.a5 = nn.Linear(120, 40)
 
   def forward(self, x):
     x = self.pool(func.relu(self.conv1(x)))
     x = self.pool(func.relu(self.conv2(x)))
-    # print(x.shape)
-    # x = x.view(-1, 15 * 5 * 5)
     x = x.view(x.size(0), -1)
     x = func.relu(self.drop1(self.a1(x)))
     x = func.relu(self.a2(x))
     x = func.relu(self.drop2(self.a3(x)))
-    # x = func.relu(self.a4(x))
     x = torch.sigmoid(self.a5(x))
     return x
 
 
 cnn = CNN()
-cnn.load_state_dict(torch.load('cnn-test.pth'))
+cnn.load_state_dict(torch.load('cnn.pth'))
 # loss_func = nn.CrossEntropyLoss()
 loss_func = nn.BCELoss()
 # optimizer = optim.SGD(cnn.parameters(), lr=0.001, momentum=0.9)
-optimizer = torch.optim.Adam(cnn.parameters(), lr=0.0005)
-epoch = 30
+epoch = 100
 
-train_data = Trainset()
-trainloader = data.DataLoader(train_data, batch_size=20, shuffle=True, num_workers=2)
 
 test_data = Trainset(if_test=True)
 testloader = data.DataLoader(test_data, batch_size=1, shuffle=False, num_workers=2)
 
-
-print('dataset prepared')
-print(time.clock())
 
 def Test():
     cnn.eval()
@@ -139,24 +102,15 @@ def Test():
     acc_d = 0
     acc_in = 0
     t = 0
-    for data in testloader:
-        inputs, labels = data
+    for _data in testloader:
+        inputs, labels = _data
         outputs = cnn(inputs)
 
         labels_n = toNumber(labels[0].reshape((4, 10)))
         outputs_n = toNumber(outputs[0].data.numpy().reshape((4, 10)))
-
-        # print(labels[0].reshape((4, 10)))
-        # print(outputs[0].data.numpy().reshape((4, 10)))
-
         if labels_n == outputs_n:
-            # print('\33[92m', end='')
             acc += 1
         
-        # print('{:02}'.format(t), 'label :', '{:04}'.format(labels_n))
-        # print('   output:', '{:04}'.format(outputs_n))
-        # print('\33[0m', end='')
-
         cnt = [ 0 for i in range(10) ]
 
         for i in range(4):
@@ -186,30 +140,25 @@ def Train():
     cnn.train()
     prev_loss = 100
     for e in range(epoch):
+        N = min(max(((e)//3+1)*10000, 10000), 200000)
+        train_data = Trainset(n=N)
+        trainloader = data.DataLoader(train_data, batch_size=50, shuffle=True, num_workers=2)
+
+        learning_rate = 0.0005
+        optimizer = torch.optim.Adam(cnn.parameters(), lr=learning_rate)
         running_loss = 0.0
-        print('\33[43m', 'epoch:', e, '\33[0m')
-        for i, data in enumerate(trainloader, 0):
-            inputs, labels = data
-            # print(inputs)
-            
+        print('\33[43m', 'epoch:', e, '\33[0m', end='')
+        print('  traindata: ', len(train_data))
+        for i, _data in enumerate(trainloader, 0):
+            inputs, labels = _data
             optimizer.zero_grad()
-
             outputs = cnn(inputs)
-
-            # print(outputs)
-            # print(labels)
             loss = loss_func(outputs, labels)
-            # print(loss.item())
             loss.backward()
             optimizer.step()
-
-
             running_loss += loss.item()
-            # print(loss.item())
-            # print(i, loss.item() / 100)
             if (i+1) % 100 == 0:
                 avg_loss = running_loss / 100
-                print(time.clock())
                 if avg_loss < prev_loss:
                     print('\33[104m', i, running_loss / 100, '\33[0m')
                 else:
@@ -226,16 +175,10 @@ def Train():
                 print('output:', '{:04}'.format(outputs_n))
                 print('\33[0m', end='')
                 
-                # print(labels[idx].reshape((4, 10)))
-                # print(outputs[idx].data.numpy().reshape((4, 10)))
-
-            if (i+1) % 1000 == 0:
-                print('\33[43m', 'epoch:', e, '-', i,'\33[0m')
-                print(time.clock())
+            if (i+1) % 100 == 0:
                 Test()
                 cnn.train()
-                torch.save(cnn.state_dict(), './cnn-test.pth')
+                # torch.save(cnn.state_dict(), './backup_test/cnn-test-'+str(e)+'-'+str(i)+'.pth')
 
-
-Train()
-# Test()
+# Train()
+Test()
