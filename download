@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cd imgs
+bash ../dataset/download.sh 200000
+
+mkdir test
+cd test
+bash ../../dataset/download.sh 010000

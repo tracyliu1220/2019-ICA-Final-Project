@@ -61,7 +61,7 @@ def main():
     # image_paths = ['../imgs/test/{:05}'.format(i) + '.png' for i in range(100)]
     if sys.argv[1] == 'train':
         target = 200000
-    else
+    else:
         target = 10000
     image_paths = ['../imgs/{:06}'.format(i) + '.png' for i in range(000000, target)]
     with mp.Pool(mp.cpu_count()) as pool:

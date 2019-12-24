@@ -4,7 +4,11 @@ NCTU 2019 Fall Intelligent Computational Algorithms Final Project
 ## Data Generation Steps
 
 ```
-./init
+./download
+```
+after downloads are done
+```
+./label
 ```
 
 ## Run Network
