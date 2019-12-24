@@ -5,6 +5,7 @@ import numpy as np
 import scipy.signal
 from PIL import Image
 import multiprocessing as mp
+import sys
 
 def sqrDiff(img, pattern):
     one = lambda x: np.ones(x.shape, dtype=int)
@@ -58,7 +59,11 @@ def imgPathToNumber(image_path):
 
 def main():
     # image_paths = ['../imgs/test/{:05}'.format(i) + '.png' for i in range(100)]
-    image_paths = ['../imgs/{:06}'.format(i) + '.png' for i in range(170000, 200000)]
+    if sys.argv[1] == 'train':
+        target = 200000
+    else
+        target = 10000
+    image_paths = ['../imgs/{:06}'.format(i) + '.png' for i in range(000000, target)]
     with mp.Pool(mp.cpu_count()) as pool:
         results = pool.map(imgPathToNumber, image_paths)
     for x in results:

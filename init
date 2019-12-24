@@ -1,0 +1,8 @@
+cd imgs
+bash ../dataset/download.sh 200000
+mkdir test
+cd test
+bash ../../dataset/download.sh 010000
+cd ../../dataset
+python3 convolution.py train > ans.txt
+python3 convolution.py test > ../imgs/test/ans.txt
