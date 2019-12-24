@@ -1,5 +1,5 @@
 #!/bin/bash
 
-cd ../../dataset
+cd dataset
 python3 convolution.py train > ans.txt
 python3 convolution.py test > ../imgs/test/ans.txt
